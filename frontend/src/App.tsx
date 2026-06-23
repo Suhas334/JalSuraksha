@@ -32,6 +32,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const RoleRoute: React.FC<{ children: React.ReactNode; allowedRoles: string[] }> = ({ children, allowedRoles }) => {
+  const { user } = useAuth();
+  if (!user || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+};
+
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -83,13 +91,41 @@ const AppRoutes: React.FC = () => {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="infrastructure/*" element={<InfrastructurePage />} />
-        <Route path="quality" element={<QualityPage />} />
-        <Route path="complaints/*" element={<ComplaintsPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="maps" element={<MapsPage />} />
-        <Route path="alerts" element={<AlertsPage />} />
-        <Route path="ai-assistant" element={<AIAssistantPage />} />
+        <Route path="infrastructure/*" element={
+          <RoleRoute allowedRoles={['super_admin', 'gp_admin', 'vWSC_member', 'district_officer']}>
+            <InfrastructurePage />
+          </RoleRoute>
+        } />
+        <Route path="quality" element={
+          <RoleRoute allowedRoles={['super_admin', 'gp_admin', 'vWSC_member', 'citizen', 'district_officer']}>
+            <QualityPage />
+          </RoleRoute>
+        } />
+        <Route path="complaints/*" element={
+          <RoleRoute allowedRoles={['super_admin', 'gp_admin', 'vWSC_member', 'citizen', 'district_officer']}>
+            <ComplaintsPage />
+          </RoleRoute>
+        } />
+        <Route path="analytics" element={
+          <RoleRoute allowedRoles={['super_admin', 'district_officer']}>
+            <AnalyticsPage />
+          </RoleRoute>
+        } />
+        <Route path="maps" element={
+          <RoleRoute allowedRoles={['super_admin', 'gp_admin', 'district_officer']}>
+            <MapsPage />
+          </RoleRoute>
+        } />
+        <Route path="alerts" element={
+          <RoleRoute allowedRoles={['super_admin', 'gp_admin', 'district_officer']}>
+            <AlertsPage />
+          </RoleRoute>
+        } />
+        <Route path="ai-assistant" element={
+          <RoleRoute allowedRoles={['super_admin', 'gp_admin', 'vWSC_member', 'district_officer']}>
+            <AIAssistantPage />
+          </RoleRoute>
+        } />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

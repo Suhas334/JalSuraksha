@@ -27,16 +27,16 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/infrastructure', label: 'Infrastructure', icon: Wrench },
-  { path: '/quality', label: 'Water Quality', icon: Droplets },
-  { path: '/complaints', label: 'Complaints', icon: ClipboardList },
-  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { path: '/maps', label: 'Maps', icon: Map },
-  { path: '/alerts', label: 'Alerts', icon: Bell },
-  { path: '/ai-assistant', label: 'AI Assistant', icon: Bot },
-  { path: '/settings', label: 'Settings', icon: Settings },
+const allNavItems = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['super_admin', 'gp_admin', 'vWSC_member', 'citizen', 'district_officer'] },
+  { path: '/infrastructure', label: 'Infrastructure', icon: Wrench, roles: ['super_admin', 'gp_admin', 'vWSC_member', 'district_officer'] },
+  { path: '/quality', label: 'Water Quality', icon: Droplets, roles: ['super_admin', 'gp_admin', 'vWSC_member', 'citizen', 'district_officer'] },
+  { path: '/complaints', label: 'Complaints', icon: ClipboardList, roles: ['super_admin', 'gp_admin', 'vWSC_member', 'citizen', 'district_officer'] },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3, roles: ['super_admin', 'district_officer'] },
+  { path: '/maps', label: 'Maps', icon: Map, roles: ['super_admin', 'gp_admin', 'district_officer'] },
+  { path: '/alerts', label: 'Alerts', icon: Bell, roles: ['super_admin', 'gp_admin', 'district_officer'] },
+  { path: '/ai-assistant', label: 'AI Assistant', icon: Bot, roles: ['super_admin', 'gp_admin', 'vWSC_member', 'district_officer'] },
+  { path: '/settings', label: 'Settings', icon: Settings, roles: ['super_admin', 'gp_admin', 'vWSC_member', 'citizen', 'district_officer'] },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -82,7 +82,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
-        {navItems.map((item) => {
+        {allNavItems
+          .filter((item) => user?.role && item.roles.includes(user.role))
+          .map((item) => {
           const Icon = item.icon;
           const isActive =
             location.pathname === item.path ||
