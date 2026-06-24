@@ -81,4 +81,20 @@ export const uploadFile = async <T>(url: string, file: File, fieldName: string =
   return response.data;
 };
 
+/**
+ * Upload multiple images and return their URLs.
+ * Uses the /upload/image endpoint.
+ */
+export const uploadImages = async (files: File[]): Promise<string[]> => {
+  if (!files || files.length === 0) return [];
+  const formData = new FormData();
+  files.forEach((file) => formData.append('images', file));
+  const response = await api.post<{ success: boolean; data: { urls: string[] } }>(
+    '/upload/image',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return response.data?.data?.urls || [];
+};
+
 export default api;

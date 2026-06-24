@@ -107,6 +107,7 @@ app.use('/api/v1/maintenance', require('./routes/maintenance'));
 app.use('/api/v1/alerts', require('./routes/alerts'));
 app.use('/api/v1/analytics', require('./routes/analytics'));
 app.use('/api/v1/ai', require('./routes/ai'));
+app.use('/api/v1/upload', require('./routes/upload'));
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({

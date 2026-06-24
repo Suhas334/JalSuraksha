@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { I18nProvider } from './contexts/I18nContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -135,6 +136,7 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
+    <I18nProvider>
     <ThemeProvider>
       <AuthProvider>
         <Router>
@@ -166,6 +168,7 @@ const App: React.FC = () => {
         </Router>
       </AuthProvider>
     </ThemeProvider>
+    </I18nProvider>
   );
 };
 

@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Download, BarChart3, Droplets, Wrench, AlertTriangle } from 'lucide-react';
+import { Download, BarChart3, Droplets, Wrench, Loader2 } from 'lucide-react';
 import ConsumptionReport from '../components/analytics/ConsumptionReport';
 import EfficiencyReport from '../components/analytics/EfficiencyReport';
 import MaintenanceCostReport from '../components/analytics/MaintenanceCostReport';
-import { ChartSkeleton } from '../components/common/LoadingSpinner';
+import { exportToPDF } from '../utils/pdfExport';
+import { useI18n } from '../contexts/I18nContext';
+import toast from 'react-hot-toast';
 
 const AnalyticsPage: React.FC = () => {
+  const { t } = useI18n();
   const [activeReport, setActiveReport] = useState<string>('consumption');
+  const [isExporting, setIsExporting] = useState(false);
 
   const consumptionData = [
     { date: 'Jan', consumption: 3200000, previous: 2900000 },
@@ -37,13 +41,31 @@ const AnalyticsPage: React.FC = () => {
   ];
 
   const reports = [
-    { id: 'consumption', label: 'Consumption', icon: Droplets },
-    { id: 'efficiency', label: 'Efficiency', icon: BarChart3 },
-    { id: 'maintenance', label: 'Maintenance Costs', icon: Wrench },
+    { id: 'consumption', label: t.analytics.consumption, icon: Droplets },
+    { id: 'efficiency', label: t.analytics.efficiency, icon: BarChart3 },
+    { id: 'maintenance', label: t.analytics.maintenanceCosts, icon: Wrench },
   ];
 
-  const handleExport = () => {
-    window.print();
+  const reportTitles: Record<string, string> = {
+    consumption: t.analytics.consumption,
+    efficiency: t.analytics.efficiency,
+    maintenance: t.analytics.maintenanceCosts,
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportToPDF('analytics-report-area', {
+        title: `${reportTitles[activeReport]} Report`,
+        filename: `${activeReport}_report`,
+      });
+      toast.success('PDF report downloaded successfully!');
+    } catch (err) {
+      toast.error('Failed to generate PDF. Please try again.');
+      console.error(err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -51,17 +73,26 @@ const AnalyticsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Detailed reports and insights
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t.analytics.title}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t.analytics.subtitle}</p>
         </div>
         <button
+          id="export-pdf-btn"
           onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors no-print"
+          disabled={isExporting}
+          className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 disabled:opacity-60 transition-colors no-print"
         >
-          <Download className="w-5 h-5" />
-          Export Report
+          {isExporting ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {t.analytics.generating}
+            </>
+          ) : (
+            <>
+              <Download className="w-5 h-5" />
+              {t.analytics.exportReport}
+            </>
+          )}
         </button>
       </div>
 
@@ -86,23 +117,25 @@ const AnalyticsPage: React.FC = () => {
         })}
       </div>
 
-      {/* Report Content */}
-      <motion.div
-        key={activeReport}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {activeReport === 'consumption' && (
-          <ConsumptionReport data={consumptionData} />
-        )}
-        {activeReport === 'efficiency' && (
-          <EfficiencyReport data={efficiencyData} />
-        )}
-        {activeReport === 'maintenance' && (
-          <MaintenanceCostReport data={maintenanceData} />
-        )}
-      </motion.div>
+      {/* Report Content — id used by PDF exporter */}
+      <div id="analytics-report-area" className="bg-white dark:bg-gray-900 rounded-xl p-2">
+        <motion.div
+          key={activeReport}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {activeReport === 'consumption' && (
+            <ConsumptionReport data={consumptionData} />
+          )}
+          {activeReport === 'efficiency' && (
+            <EfficiencyReport data={efficiencyData} />
+          )}
+          {activeReport === 'maintenance' && (
+            <MaintenanceCostReport data={maintenanceData} />
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 };

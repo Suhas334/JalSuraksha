@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, LayoutGrid, List, Map } from 'lucide-react';
+import { Plus, Filter, LayoutGrid, List } from 'lucide-react';
 import ComplaintList from '../components/complaints/ComplaintList';
 import ComplaintForm from '../components/complaints/ComplaintForm';
 import ComplaintDetail from '../components/complaints/ComplaintDetail';
 import KPICard from '../components/common/KPICard';
 import { useFetch } from '../hooks/useApi';
-import { apiPost } from '../utils/api';
+import { apiPost, uploadImages } from '../utils/api';
 import { Complaint } from '../types';
+import { useI18n } from '../contexts/I18nContext';
 import toast from 'react-hot-toast';
 
 const ComplaintsPage: React.FC = () => {
+  const { t } = useI18n();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
@@ -34,13 +36,24 @@ const ComplaintsPage: React.FC = () => {
   const inProgressCount = complaints.filter((c) => c.status === 'in_progress').length;
   const resolvedCount = complaints.filter((c) => c.status === 'resolved').length;
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (formData: any) => {
     setSubmitLoading(true);
     try {
-      await apiPost('/complaints', data);
+      // Step 1: Upload images if any
+      let imageUrls: string[] = [];
+      if (formData.images && formData.images.length > 0) {
+        toast.loading('Uploading images...', { id: 'upload-toast' });
+        imageUrls = await uploadImages(formData.images);
+        toast.dismiss('upload-toast');
+      }
+
+      // Step 2: Submit complaint with image URLs
+      const { images, ...rest } = formData;
+      await apiPost('/complaints', { ...rest, images: imageUrls });
       toast.success('Complaint submitted successfully');
       refetch();
     } catch (error) {
+      toast.dismiss('upload-toast');
       toast.error('Failed to submit complaint');
     } finally {
       setSubmitLoading(false);
@@ -52,26 +65,24 @@ const ComplaintsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Complaints</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Track and manage user complaints
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t.complaints.title}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t.complaints.subtitle}</p>
         </div>
         <button
           onClick={() => setIsFormOpen(true)}
           className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          New Complaint
+          {t.complaints.newComplaint}
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total" value={complaints.length} icon={Filter} color="primary" />
-        <KPICard title="Pending" value={pendingCount} icon={Filter} color="accent" />
-        <KPICard title="In Progress" value={inProgressCount} icon={Filter} color="secondary" />
-        <KPICard title="Resolved" value={resolvedCount} icon={Filter} color="success" />
+        <KPICard title={t.complaints.total} value={complaints.length} icon={Filter} color="primary" />
+        <KPICard title={t.complaints.pending} value={pendingCount} icon={Filter} color="accent" />
+        <KPICard title={t.complaints.inProgress} value={inProgressCount} icon={Filter} color="secondary" />
+        <KPICard title={t.complaints.resolved} value={resolvedCount} icon={Filter} color="success" />
       </div>
 
       {/* Filters & View Toggle */}
