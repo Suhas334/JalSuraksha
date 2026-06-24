@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { getInitials, timeAgo } from '../../utils/helpers';
+import { useI18n, Language } from '../../contexts/I18nContext';
+import { getInitials } from '../../utils/helpers';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -36,13 +37,16 @@ const pageTitles: Record<string, string> = {
 const Header: React.FC<HeaderProps> = ({ onMenuClick, notificationCount = 0 }) => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const { language, t, setLanguage } = useI18n();
   const location = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -58,6 +62,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, notificationCount = 0 }) =
       }
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
         setIsNotificationsOpen(false);
+      }
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setIsLangMenuOpen(false);
       }
     };
 
@@ -134,6 +141,50 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, notificationCount = 0 }) =
               <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             )}
           </button>
+
+          {/* Language Switcher */}
+          <div className="relative" ref={langMenuRef}>
+            <button
+              onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+              title="Change language"
+              id="language-switcher-btn"
+            >
+              <span className="text-base">
+                {language === 'en' ? '🇬🇧' : language === 'te' ? '🇮🇳' : '🇮🇳'}
+              </span>
+              <span className="hidden sm:block uppercase tracking-wide">{language}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+
+            {/* @ts-ignore */}
+            <AnimatePresence>
+              {isLangMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+                >
+                  {(['en', 'te', 'hi'] as Language[]).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => { setLanguage(lang); setIsLangMenuOpen(false); }}
+                      className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors ${
+                        language === lang
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-semibold'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                      id={`lang-${lang}`}
+                    >
+                      <span>{lang === 'en' ? '🇬🇧' : '🇮🇳'}</span>
+                      <span>{t.languages[lang]}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
