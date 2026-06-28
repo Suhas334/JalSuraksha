@@ -30,6 +30,7 @@ export const exportToExcel = async (
 
   try {
     // Dynamically import xlsx so the bundle only includes it if present
+    // @ts-ignore: Optional dependency, safe to ignore if missing since we fall back to CSV
     const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
