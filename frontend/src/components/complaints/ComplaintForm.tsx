@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, MapPin, Upload, X } from 'lucide-react';
 import Modal from '../common/Modal';
 import toast from 'react-hot-toast';
-import { apiGet } from '../../utils/api';
+import { useI18n } from '../../contexts/I18nContext';
 
-// Must match backend constants: COMPLAINT_CATEGORIES & PRIORITY_LEVELS
 const complaintSchema = z.object({
   category: z.enum(['leakage', 'no_water', 'dirty_water', 'low_pressure', 'other']),
   description: z.string().min(10, 'Description must be at least 10 characters'),
@@ -26,7 +25,7 @@ interface ComplaintFormProps {
 
 const prioritySuggestions: Record<string, string> = {
   leakage: 'high',
-  no_water: 'urgent',
+  no_water: 'high',
   dirty_water: 'high',
   low_pressure: 'medium',
   other: 'low',
@@ -41,10 +40,10 @@ const categoryLabels: Record<string, string> = {
 };
 
 const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit, loading }) => {
+  const { t } = useI18n();
   const [images, setImages] = useState<File[]>([]);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
-  const [villages, setVillages] = useState<{ _id: string; name: string; code: string }[]>([]);
 
   const {
     register,
@@ -57,24 +56,11 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
     defaultValues: {
       category: 'leakage',
       priority: 'medium',
+      village: '',
     },
   });
 
   const watchCategory = watch('category');
-
-  // Fetch real villages from backend
-  useEffect(() => {
-    if (isOpen) {
-      apiGet('/villages')
-        .then((res: any) => {
-          const list = res?.data?.villages || [];
-          setVillages(list);
-        })
-        .catch(() => {
-          // silently ignore — village dropdown will be empty
-        });
-    }
-  }, [isOpen]);
 
   const captureLocation = () => {
     setIsCapturingLocation(true);
@@ -114,12 +100,12 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="File a Complaint" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t.complaints.submitComplaint} size="lg">
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
         {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Category
+            {t.complaints.category}
           </label>
           <select
             {...register('category')}
@@ -134,7 +120,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Description
+            {t.complaints.description}
           </label>
           <textarea
             {...register('description')}
@@ -151,7 +137,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Priority
+              {t.complaints.priority}
             </label>
             <select
               {...register('priority')}
@@ -168,17 +154,14 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Village
+              {t.complaints.village}
             </label>
-            <select
+            <input
               {...register('village')}
+              type="text"
+              placeholder={t.complaints.villagePlaceholder}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">Select Village</option>
-              {villages.map((v) => (
-                <option key={v._id} value={v._id}>{v.name} ({v.code})</option>
-              ))}
-            </select>
+            />
             {errors.village && (
               <p className="mt-1 text-sm text-danger-500">{errors.village.message}</p>
             )}
@@ -194,11 +177,11 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <MapPin className="w-4 h-4" />
-            {isCapturingLocation ? 'Capturing...' : location ? 'Location Captured ✓' : 'Capture GPS Location'}
+            {isCapturingLocation ? 'Capturing...' : location ? t.complaints.locationCaptured : t.complaints.captureLocation}
           </button>
           {location && (
             <p className="text-sm text-gray-500 mt-2">
-              📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+              {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
             </p>
           )}
         </div>
@@ -206,7 +189,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
         {/* Image Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Photos (Optional, max 5)
+            {t.complaints.uploadPhotos}
           </label>
           <div className="flex flex-wrap gap-3">
             {images.map((image, index) => (
@@ -247,7 +230,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
             onClick={onClose}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
           >
-            Cancel
+            {t.complaints.cancel}
           </button>
           <button
             type="submit"
@@ -257,10 +240,10 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ isOpen, onClose, onSubmit
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Submitting...
+                {t.complaints.submitting}
               </>
             ) : (
-              'Submit Complaint'
+              t.complaints.submitComplaint
             )}
           </button>
         </div>

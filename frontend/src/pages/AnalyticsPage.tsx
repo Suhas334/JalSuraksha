@@ -85,12 +85,12 @@ const ComplaintTrendsReport: React.FC<{ data: ComplaintTrendsData | null; loadin
 const GRADE_COLORS: Record<string, string> = { A: '#22c55e', B: '#0ea5e9', C: '#f59e0b', D: '#ef4444' };
 
 const HealthScoreReport: React.FC<{ data: { scores: VillageHealthScore[] } | null; loading: boolean }> = ({ data, loading }) => {
-  const [selected, setSelected] = useState<VillageHealthScore | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState(0);
 
   if (loading) return <div className="flex justify-center py-24"><Loader2 className="w-10 h-10 animate-spin text-primary-400" /></div>;
   if (!data?.scores?.length) return <div className="text-center py-20 text-gray-400">No village data available.</div>;
 
-  const activeSelected = selected ?? data.scores[0];
+  const selected = data.scores[selectedIdx] ?? data.scores[0];
 
   return (
     <div className="space-y-6 p-4">
@@ -98,9 +98,9 @@ const HealthScoreReport: React.FC<{ data: { scores: VillageHealthScore[] } | nul
         {data.scores.map(vs => (
           <button
             key={vs.village._id}
-            onClick={() => setSelected(vs)}
+            onClick={() => setSelectedIdx(data.scores.indexOf(vs))}
             className={`text-left p-4 rounded-2xl border-2 transition-all ${
-              activeSelected?.village._id === vs.village._id
+              selected.village._id === vs.village._id
                 ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
                 : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-300'
             }`}
@@ -131,17 +131,17 @@ const HealthScoreReport: React.FC<{ data: { scores: VillageHealthScore[] } | nul
         ))}
       </div>
 
-      {activeSelected && (
+      {selected && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Radar breakdown */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
-            <h4 className="font-semibold text-gray-800 dark:text-white mb-4">{activeSelected.village.name} — Score Breakdown</h4>
+            <h4 className="font-semibold text-gray-800 dark:text-white mb-4">{selected.village.name} — Score Breakdown</h4>
             <ResponsiveContainer width="100%" height={220}>
               <RadarChart data={[
-                { subject: 'Pumps', score: activeSelected.breakdown.pumpScore, fullMark: 25 },
-                { subject: 'Tanks', score: activeSelected.breakdown.tankScore, fullMark: 25 },
-                { subject: 'Quality', score: activeSelected.breakdown.qualityScore, fullMark: 25 },
-                { subject: 'Complaints', score: activeSelected.breakdown.complaintScore, fullMark: 25 },
+                { subject: 'Pumps', score: selected.breakdown.pumpScore, fullMark: 25 },
+                { subject: 'Tanks', score: selected.breakdown.tankScore, fullMark: 25 },
+                { subject: 'Quality', score: selected.breakdown.qualityScore, fullMark: 25 },
+                { subject: 'Complaints', score: selected.breakdown.complaintScore, fullMark: 25 },
               ]}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
@@ -156,10 +156,10 @@ const HealthScoreReport: React.FC<{ data: { scores: VillageHealthScore[] } | nul
             <h4 className="font-semibold text-gray-800 dark:text-white mb-4">Infrastructure Details</h4>
             <div className="space-y-3">
               {[
-                { label: 'Running Pumps', value: `${activeSelected.details.runningPumps} / ${activeSelected.details.totalPumps}` },
-                { label: 'Avg Tank Level', value: `${activeSelected.details.avgTankLevel}%` },
-                { label: 'Latest Water Quality', value: activeSelected.details.latestQualityStatus.replace(/_/g, ' ').toUpperCase() },
-                { label: 'Resolved Complaints', value: `${activeSelected.details.resolvedComplaints} / ${activeSelected.details.totalComplaints}` },
+                { label: 'Running Pumps', value: `${selected.details.runningPumps} / ${selected.details.totalPumps}` },
+                { label: 'Avg Tank Level', value: `${selected.details.avgTankLevel}%` },
+                { label: 'Latest Water Quality', value: selected.details.latestQualityStatus.replace(/_/g, ' ').toUpperCase() },
+                { label: 'Resolved Complaints', value: `${selected.details.resolvedComplaints} / ${selected.details.totalComplaints}` },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
                   <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
